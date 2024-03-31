@@ -7,10 +7,10 @@
 
 #define BUF_SIZE 500
 
-void close_fd(int fd){
+void close_fd(int fd) {
   int err = close(fd);
   if (err != 0) {
-      perror("In close_fd");
+    perror("In close_fd");
   }
 }
 
@@ -43,11 +43,11 @@ int main() {
         return -1;
       }
     }
-
+  again:
     read_b = write(outp_fd, buf, read_b);
     if (read_b == -1) {
       if (errno == EINTR || errno == EAGAIN)
-        continue;
+        goto again;
       else {
         perror("While reading input.txt");
         return -1;
