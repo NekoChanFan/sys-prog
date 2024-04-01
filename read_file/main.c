@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -29,22 +30,46 @@ int main() {
   }
 
   ssize_t read_b;
-  char buf[BUF_SIZE + 1];
+  char *buf = malloc(sizeof(char) * (BUF_SIZE + 1));
+  char *init_buf = buf;
   int len = BUF_SIZE;
+  int really_read = 0;
 
   while ((read_b = read(inp_fd, buf, len)) != 0) {
-    if (read_b == -1) {
-      if (errno == EINTR || errno == EAGAIN)
-        continue;
-      else {
-        perror("While reading input.txt");
-        close_fd(inp_fd);
-        close_fd(outp_fd);
-        return -1;
+    if (read_b < len) {
+      len -= read_b;
+      buf += read_b;
+      really_read += read_b;
+      if (read_b == -1) {
+        if (errno == EINTR || errno == EAGAIN)
+          continue;
+        else {
+          perror("While reading input.txt");
+          close_fd(inp_fd);
+          close_fd(outp_fd);
+          free(init_buf);
+          return -1;
+        }
+      }
+      while ((len != 0) && ((read_b = read(inp_fd, buf, len)) != 0)) {
+        if (read_b == -1) {
+          if (errno == EINTR || errno == EAGAIN)
+            continue;
+          else {
+            perror("While reading input.txt");
+            close_fd(inp_fd);
+            close_fd(outp_fd);
+            free(init_buf);
+            return -1;
+          }
+        }
+        len -= read_b;
+        buf += read_b;
+        really_read += read_b;
       }
     }
   again:
-    read_b = write(outp_fd, buf, read_b);
+    read_b = write(outp_fd, init_buf, really_read);
     if (read_b == -1) {
       if (errno == EINTR || errno == EAGAIN)
         goto again;
@@ -52,12 +77,17 @@ int main() {
         perror("While reading input.txt");
         close_fd(inp_fd);
         close_fd(outp_fd);
+        free(init_buf);
         return -1;
       }
     }
+
+    len = BUF_SIZE;
+    buf = init_buf;
   }
 
   close_fd(inp_fd);
   close_fd(outp_fd);
+  free(init_buf);
   return 0;
 }
