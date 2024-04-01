@@ -50,6 +50,8 @@ int main() {
         goto again;
       else {
         perror("While reading input.txt");
+        close_fd(inp_fd);
+        close_fd(outp_fd);
         return -1;
       }
     }
