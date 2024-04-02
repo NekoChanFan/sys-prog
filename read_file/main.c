@@ -6,7 +6,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define BUF_SIZE 500
+#define BUF_SIZE 10
 
 void close_fd(int fd) {
   int err = close(fd);
@@ -71,7 +71,7 @@ int main() {
       }
     }
 
-    while ((write_b = write(outp_fd, write_buf, really_read)) != 0 && len != 0) {
+    while ((write_b = write(outp_fd, write_buf, really_read)) != 0 && really_read != 0) {
       if (write_b == -1) {
         if (errno == EINTR || errno == EAGAIN)
           continue;
